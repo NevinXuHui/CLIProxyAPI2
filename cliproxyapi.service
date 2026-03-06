@@ -1,0 +1,22 @@
+[Unit]
+Description=CLI Proxy API Server
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/mine/Code/ai-tools/CLIProxyAPI2
+ExecStart=/mine/Code/ai-tools/CLIProxyAPI2/cliproxyapi
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+
+# 环境变量（如果需要）
+Environment="GIN_MODE=release"
+
+# 资源限制
+LimitNOFILE=65536
+
+[Install]
+WantedBy=multi-user.target
