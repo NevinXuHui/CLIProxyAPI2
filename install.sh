@@ -58,8 +58,15 @@ if [ ! -f "${PROJECT_DIR}/config.yaml" ]; then
     fi
 fi
 
-# 编译项目
-echo -e "${YELLOW}正在编译项目...${NC}"
+# 强制重新编译项目
+echo -e "${YELLOW}正在重新编译项目...${NC}"
+
+# 删除旧的二进制文件
+if [ -f "${BINARY_PATH}" ]; then
+    rm -f "${BINARY_PATH}"
+    echo -e "${YELLOW}已删除旧的二进制文件${NC}"
+fi
+
 cd "${PROJECT_DIR}"
 go build -o "${BINARY_NAME}" ./cmd/server/main.go
 

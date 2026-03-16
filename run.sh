@@ -38,28 +38,32 @@ if [ -z "$CONFIG_PORT" ]; then
 fi
 echo "配置端口: ${CONFIG_PORT}"
 
-# 检查二进制文件是否存在
-if [ ! -f "${BINARY_PATH}" ]; then
-    echo -e "${YELLOW}未找到编译后的二进制文件，正在编译...${NC}"
+# 强制重新编译后端
+echo -e "${YELLOW}正在重新编译后端...${NC}"
 
-    # 检查 Go 是否安装
-    if ! command -v go &> /dev/null; then
-        echo -e "${RED}错误: 未找到 Go 编译器${NC}"
-        echo "请先安装 Go: https://golang.org/dl/"
-        exit 1
-    fi
-
-    cd "${PROJECT_DIR}"
-    go build -o "${BINARY_NAME}" ./cmd/server/main.go
-
-    if [ ! -f "${BINARY_PATH}" ]; then
-        echo -e "${RED}错误: 编译失败${NC}"
-        exit 1
-    fi
-
-    chmod +x "${BINARY_PATH}"
-    echo -e "${GREEN}✓ 编译成功${NC}"
+# 检查 Go 是否安装
+if ! command -v go &> /dev/null; then
+    echo -e "${RED}错误: 未找到 Go 编译器${NC}"
+    echo "请先安装 Go: https://golang.org/dl/"
+    exit 1
 fi
+
+# 删除旧的二进制文件
+if [ -f "${BINARY_PATH}" ]; then
+    rm -f "${BINARY_PATH}"
+    echo -e "${YELLOW}已删除旧的二进制文件${NC}"
+fi
+
+cd "${PROJECT_DIR}"
+go build -o "${BINARY_NAME}" ./cmd/server/main.go
+
+if [ ! -f "${BINARY_PATH}" ]; then
+    echo -e "${RED}错误: 编译失败${NC}"
+    exit 1
+fi
+
+chmod +x "${BINARY_PATH}"
+echo -e "${GREEN}✓ 编译成功${NC}"
 
 # 杀掉可能存在的旧进程（按进程名）
 echo -e "${YELLOW}检查并清理旧进程...${NC}"
@@ -94,34 +98,14 @@ if [ -f "${PID_FILE}" ]; then
     rm -f "${PID_FILE}"
 fi
 
-# 启动服务
+# 启动服务（前台运行）
 echo -e "${GREEN}正在启动服务...${NC}"
+echo -e "${YELLOW}提示: 服务将在前台运行，按 Ctrl+C 停止${NC}"
+echo ""
 cd "${PROJECT_DIR}"
 
 # 设置环境变量
 export GIN_MODE=release
 
-# 启动服务并保存 PID
-nohup "${BINARY_PATH}" > "${PROJECT_DIR}/cliproxyapi.log" 2>&1 &
-PID=$!
-echo $PID > "${PID_FILE}"
-
-# 等待服务启动
-sleep 2
-
-# 检查进程是否还在运行
-if kill -0 $PID 2>/dev/null; then
-    echo -e "${GREEN}✓ 服务启动成功${NC}"
-    echo "PID: $PID"
-    echo "日志文件: ${PROJECT_DIR}/cliproxyapi.log"
-    echo ""
-    echo "管理命令:"
-    echo "  查看日志: tail -f ${PROJECT_DIR}/cliproxyapi.log"
-    echo "  停止服务: kill $PID 或 kill \$(cat ${PID_FILE})"
-    echo "  查看进程: ps aux | grep ${BINARY_NAME}"
-else
-    echo -e "${RED}错误: 服务启动失败${NC}"
-    echo "请查看日志: cat ${PROJECT_DIR}/cliproxyapi.log"
-    rm -f "${PID_FILE}"
-    exit 1
-fi
+# 前台运行服务
+exec "${BINARY_PATH}"
