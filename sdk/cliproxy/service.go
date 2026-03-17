@@ -886,7 +886,7 @@ func (s *Service) registerModelsForAuth(a *coreauth.Auth) {
 		case "team", "business", "go":
 			models = registry.GetCodexTeamModels()
 		case "free":
-			models = registry.GetCodexFreeModels()
+			models = registry.GetCodexProModels()
 		default:
 			models = registry.GetCodexProModels()
 		}
