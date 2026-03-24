@@ -41,12 +41,19 @@ echo "配置端口: ${CONFIG_PORT}"
 # 强制重新编译后端
 echo -e "${YELLOW}正在重新编译后端...${NC}"
 
-# 检查 Go 是否安装
-if ! command -v go &> /dev/null; then
+# 优先使用 /usr/local/go/bin/go（常见手工安装路径），否则回退到 PATH 中的 go
+GO_BIN=""
+if [ -x "/usr/local/go/bin/go" ]; then
+    GO_BIN="/usr/local/go/bin/go"
+elif command -v go &> /dev/null; then
+    GO_BIN="$(command -v go)"
+else
     echo -e "${RED}错误: 未找到 Go 编译器${NC}"
     echo "请先安装 Go: https://golang.org/dl/"
     exit 1
 fi
+
+echo "使用 Go: $("${GO_BIN}" version)"
 
 # 删除旧的二进制文件
 if [ -f "${BINARY_PATH}" ]; then
@@ -55,7 +62,7 @@ if [ -f "${BINARY_PATH}" ]; then
 fi
 
 cd "${PROJECT_DIR}"
-go build -o "${BINARY_NAME}" ./cmd/server/main.go
+"${GO_BIN}" build -o "${BINARY_NAME}" ./cmd/server/main.go
 
 if [ ! -f "${BINARY_PATH}" ]; then
     echo -e "${RED}错误: 编译失败${NC}"
